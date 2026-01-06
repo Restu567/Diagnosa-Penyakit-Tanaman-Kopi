@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Sistem Pakar Penyakit Kopi</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f4f6f9;
+}
+.sidebar {
+    width: 230px;
+    height: 100vh;
+    background: #2e7d32;
+    color: white;
+    position: fixed;
+    padding: 20px;
+}
+.sidebar h2 { text-align: center; }
+.sidebar button {
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+    border: none;
+    background: #388e3c;
+    color: white;
+    border-radius: 5px;
+    cursor: pointer;
+}
+.sidebar button:hover { background: #1b5e20; }
+
+.content {
+    margin-left: 260px;
+    padding: 30px;
+}
+.card {
+    background: white;
+    padding: 25px;
+    border-radius: 10px;
+    width: 780px;
+}
+
+button.action {
+    padding: 10px 25px;
+    margin: 10px;
+    font-size: 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+.yes { background: #2e7d32; color: white; }
+.no { background: #c62828; color: white; }
+.reset { background: #1565c0; color: white; }
+.download { background: #6a1b9a; color: white; }
+
+.hasil {
+    margin-top: 15px;
+    background: #e8f5e9;
+    padding: 15px;
+    border-radius: 6px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="sidebar">
+    <h2>☕ Kopi</h2>
+    <button onclick="showDashboard()">🏠 Dashboard</button>
+    <button onclick="showDiagnosa()">🩺 Diagnosa</button>
+</div>
+
+<div class="content">
+
+<div id="dashboard" class="card">
+    <h2>Dashboard Sistem Pakar</h2>
+    <p>
+        Sistem pakar diagnosis penyakit tanaman kopi menggunakan
+        metode <b>Decision Tree</b> dengan pertanyaan <b>YA / TIDAK</b>.
+    </p>
+</div>
+
+<div id="diagnosa" class="card" style="display:none;">
+    <h2>Diagnosa Penyakit Kopi</h2>
+
+    <p id="pertanyaan"></p>
+
+    <button class="action yes" onclick="jawab(true)">YA</button>
+    <button class="action no" onclick="jawab(false)">TIDAK</button>
+
+    <div id="hasil" class="hasil"></div>
+
+    <button class="action reset" onclick="mulai()">🔄 Ulang Diagnosa</button>
+    <button class="action download" onclick="downloadHasil()">⬇ Download Hasil</button>
+</div>
+
+</div>
+
+<script>
+// ================= NAVIGASI =================
+function showDashboard() {
+    dashboard.style.display = "block";
+    diagnosa.style.display = "none";
+}
+function showDiagnosa() {
+    dashboard.style.display = "none";
+    diagnosa.style.display = "block";
+    mulai();
+}
+
+// ================= SOLUSI PENYAKIT =================
+const solusi = {
+    "Karat Daun": "Pangkas daun terserang, atur naungan, dan semprot fungisida.",
+    "Bercak Daun": "Buang daun terinfeksi dan gunakan fungisida sesuai dosis.",
+    "Penggerek Buah": "Gunakan perangkap feromon dan musnahkan buah terserang.",
+    "Penggerek Daun": "Gunakan insektisida nabati dan sanitasi kebun.",
+    "Busuk Akar": "Perbaiki drainase dan aplikasikan fungisida tanah.",
+    "Mati Pucuk": "Pangkas bagian terserang dan lakukan sanitasi.",
+    "Tanaman Sehat": "Lakukan perawatan rutin dan pemupukan seimbang."
+};
+
+// ================= POHON KEPUTUSAN LENGKAP =================
+const tree = {
+    question: "Apakah daun kopi menguning?",
+    yes: {
+        question: "Apakah terdapat bercak pada daun?",
+        yes: {
+            question: "Apakah bercak berbentuk bulat?",
+            yes: {
+                question: "Apakah terdapat serbuk jingga di balik daun?",
+                yes: {
+                    question: "Apakah bercak dikelilingi halo kuning?",
+                    yes: { hasil: "Karat Daun" },
+                    no: { hasil: "Bercak Daun" }
+                },
+                no: { hasil: "Bercak Daun" }
+            },
+            no: {
+                question: "Apakah daun berlubang?",
+                yes: { hasil: "Penggerek Daun" },
+                no: { hasil: "Tanaman Sehat" }
+            }
+        },
+        no: {
+            question: "Apakah buah kopi rontok?",
+            yes: {
+                question: "Apakah buah berlubang kecil?",
+                yes: { hasil: "Penggerek Buah" },
+                no: { hasil: "Tanaman Sehat" }
+            },
+            no: { hasil: "Tanaman Sehat" }
+        }
+    },
+    no: {
+        question: "Apakah akar tanaman membusuk?",
+        yes: { hasil: "Busuk Akar" },
+        no: {
+            question: "Apakah ujung batang mengering?",
+            yes: { hasil: "Mati Pucuk" },
+            no: { hasil: "Tanaman Sehat" }
+        }
+    }
+};
+
+let node;
+let hasilAkhir = "";
+
+// ================= LOGIKA =================
+function mulai() {
+    node = tree;
+    hasil.innerHTML = "";
+    tampil();
+}
+
+function tampil() {
+    if (node.hasil) {
+        let teks =
+            "<b>Hasil Diagnosa:</b><br>" +
+            node.hasil +
+            "<br><br><b>Solusi:</b><br>" +
+            solusi[node.hasil];
+
+        pertanyaan.innerHTML = teks;
+        hasilAkhir = teks;
+        return;
+    }
+    pertanyaan.innerHTML = "<b>Pertanyaan:</b><br>" + node.question;
+}
+
+function jawab(isYes) {
+    node = isYes ? node.yes : node.no;
+    tampil();
+}
+
+// ================= DOWNLOAD =================
+function downloadHasil() {
+    if (!hasilAkhir) {
+        alert("Diagnosa belum selesai!");
+        return;
+    }
+
+    let teks = hasilAkhir.replace(/<br>/g, "\n").replace(/<b>|<\/b>/g, "");
+    let blob = new Blob([teks], { type: "text/plain" });
+    let a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "hasil_diagnosa_kopi.txt";
+    a.click();
+}
+</script>
+
+</body>
+</html>
